@@ -17,6 +17,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Check active sessions and subscribe to auth changes
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
@@ -30,54 +31,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, username: string) => {
-    try {
-      // First check if username is already taken
-      const { data: existingUser, error: checkError } = await supabase
-        .from('profiles')
-        .select('username')
-        .eq('username', username)
-        .single();
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
 
-      if (checkError && checkError.code !== 'PGRST116') {
-        throw new Error('Error checking username availability');
-      }
+    if (authError) throw authError;
 
-      if (existingUser) {
-        throw new Error('Username already taken');
-      }
-
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-
-      if (authError) throw authError;
-
-      if (!authData.user?.id) {
-        throw new Error('Failed to create user account');
-      }
-
-      // Create profile
+    if (authData.user) {
       const { error: profileError } = await supabase
         .from('profiles')
-        .insert([
-          {
-            id: authData.user.id,
-            username,
-            created_at: new Date().toISOString(),
-          }
-        ]);
+        .insert([{ id: authData.user.id, username }]);
 
-      if (profileError) {
-        // If profile creation fails, we should clean up the auth user
-        await supabase.auth.signOut();
-        throw new Error('Failed to create user profile');
-      }
-    } catch (error) {
-      // Clean up if needed
-      await supabase.auth.signOut();
-      throw error;
+      if (profileError) throw profileError;
     }
   };
 

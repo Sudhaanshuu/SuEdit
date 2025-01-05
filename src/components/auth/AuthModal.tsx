@@ -27,17 +27,10 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
       if (isLogin) {
         await signIn(email, password);
       } else {
-        if (username.length < 3) {
-          throw new Error('Username must be at least 3 characters long');
-        }
-        if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-          throw new Error('Username can only contain letters, numbers, and underscores');
-        }
         await signUp(email, password, username);
       }
       onClose();
     } catch (err) {
-      console.error('Auth error:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
@@ -74,8 +67,6 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
               className="w-full bg-dark-200 text-gray-200 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary-500"
               required
               minLength={3}
-              pattern="^[a-zA-Z0-9_]+$"
-              title="Username can only contain letters, numbers, and underscores"
             />
           )}
           
