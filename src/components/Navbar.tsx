@@ -1,12 +1,13 @@
-import { Search, Bell, Menu, User, LogOut } from 'lucide-react';
+import { Search, Bell, Menu, User, LogOut, Home } from 'lucide-react';
 import { useState } from 'react';
 import { AuthModal } from './auth/AuthModal';
 import { useAuth } from '../contexts/AuthContext';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export function Navbar() {
   const { user, signOut } = useAuth();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const location = useLocation();
 
   const handleSignOut = async () => {
     try {
@@ -21,10 +22,21 @@ export function Navbar() {
       <nav className="fixed top-0 left-0 right-0 bg-dark-200/80 backdrop-blur-md border-b border-primary-800/20 z-40">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-6">
               <Link to="/" className="text-2xl font-cyber font-bold bg-gradient-to-r from-primary-400 to-primary-600 text-transparent bg-clip-text">
                 Suedit
               </Link>
+              {user && (
+                <Link 
+                  to="/" 
+                  className={`text-gray-400 hover:text-primary-500 flex items-center space-x-2 ${
+                    location.pathname === '/' ? 'text-primary-500' : ''
+                  }`}
+                >
+                  <Home size={20} />
+                  <span className="hidden md:inline">Feed</span>
+                </Link>
+              )}
             </div>
 
             <div className="hidden md:block flex-1 max-w-xl mx-8">
@@ -41,10 +53,20 @@ export function Navbar() {
             <div className="flex items-center space-x-4">
               {user ? (
                 <>
-                  <Link to="/notifications" className="text-gray-400 hover:text-primary-500">
+                  <Link 
+                    to="/notifications" 
+                    className={`text-gray-400 hover:text-primary-500 ${
+                      location.pathname === '/notifications' ? 'text-primary-500' : ''
+                    }`}
+                  >
                     <Bell size={20} />
                   </Link>
-                  <Link to="/profile" className="text-gray-400 hover:text-primary-500">
+                  <Link 
+                    to="/profile" 
+                    className={`text-gray-400 hover:text-primary-500 ${
+                      location.pathname === '/profile' ? 'text-primary-500' : ''
+                    }`}
+                  >
                     <User size={20} />
                   </Link>
                   <button 

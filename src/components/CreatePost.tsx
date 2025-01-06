@@ -31,6 +31,8 @@ export function CreatePost() {
     }
   };
 
+  if (!user) return null;
+
   return (
     <div className="bg-dark-100 rounded-lg p-4 mb-6 border border-primary-800/20">
       <div className="flex items-start space-x-4">
