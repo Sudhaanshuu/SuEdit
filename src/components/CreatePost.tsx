@@ -37,7 +37,7 @@ export function CreatePost() {
     <div className="bg-dark-100 rounded-lg p-4 mb-6 border border-primary-800/20">
       <div className="flex items-start space-x-4">
         <img
-          src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop"
+          src="./logo.png"
           alt="User avatar"
           className="w-10 h-10 rounded-full border-2 border-primary-500"
         />
