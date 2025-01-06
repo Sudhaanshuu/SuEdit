@@ -1,9 +1,20 @@
-import { Search, Bell, Menu, User } from 'lucide-react';
+import { Search, Bell, Menu, User, LogOut } from 'lucide-react';
 import { useState } from 'react';
 import { AuthModal } from './auth/AuthModal';
+import { useAuth } from '../contexts/AuthContext';
+import { Link } from 'react-router-dom';
 
 export function Navbar() {
+  const { user, signOut } = useAuth();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  };
 
   return (
     <>
@@ -11,9 +22,9 @@ export function Navbar() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center">
-              <h1 className="text-2xl font-cyber font-bold bg-gradient-to-r from-primary-400 to-primary-600 text-transparent bg-clip-text">
+              <Link to="/" className="text-2xl font-cyber font-bold bg-gradient-to-r from-primary-400 to-primary-600 text-transparent bg-clip-text">
                 Suedit
-              </h1>
+              </Link>
             </div>
 
             <div className="hidden md:block flex-1 max-w-xl mx-8">
@@ -28,20 +39,32 @@ export function Navbar() {
             </div>
 
             <div className="flex items-center space-x-4">
-              <button className="text-gray-400 hover:text-primary-500">
-                <Bell size={20} />
-              </button>
-              <button className="text-gray-400 hover:text-primary-500">
-                <User size={20} />
-              </button>
+              {user ? (
+                <>
+                  <Link to="/notifications" className="text-gray-400 hover:text-primary-500">
+                    <Bell size={20} />
+                  </Link>
+                  <Link to="/profile" className="text-gray-400 hover:text-primary-500">
+                    <User size={20} />
+                  </Link>
+                  <button 
+                    onClick={handleSignOut}
+                    className="hidden md:flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700"
+                  >
+                    <LogOut size={16} />
+                    <span>Sign Out</span>
+                  </button>
+                </>
+              ) : (
+                <button 
+                  onClick={() => setIsAuthOpen(true)}
+                  className="hidden md:block bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700"
+                >
+                  Sign In
+                </button>
+              )}
               <button className="md:hidden text-gray-400 hover:text-primary-500">
                 <Menu size={20} />
-              </button>
-              <button 
-                onClick={() => setIsAuthOpen(true)}
-                className="hidden md:block bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700"
-              >
-                Sign In
               </button>
             </div>
           </div>

@@ -1,8 +1,35 @@
 import { Image, Send } from 'lucide-react';
 import { useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
 export function CreatePost() {
   const [content, setContent] = useState('');
+  const [loading, setLoading] = useState(false);
+  const { user } = useAuth();
+
+  const handleSubmit = async () => {
+    if (!user || !content.trim()) return;
+
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .insert([
+          {
+            user_id: user.id,
+            content: content.trim(),
+          }
+        ]);
+
+      if (error) throw error;
+      setContent('');
+    } catch (error) {
+      console.error('Error creating post:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="bg-dark-100 rounded-lg p-4 mb-6 border border-primary-800/20">
@@ -24,9 +51,13 @@ export function CreatePost() {
               <Image size={20} />
               <span>Add Image</span>
             </button>
-            <button className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 flex items-center space-x-2">
+            <button 
+              onClick={handleSubmit}
+              disabled={loading || !content.trim()}
+              className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <Send size={16} />
-              <span>Post</span>
+              <span>{loading ? 'Posting...' : 'Post'}</span>
             </button>
           </div>
         </div>
