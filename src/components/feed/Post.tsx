@@ -51,7 +51,7 @@ export function Post({ post, onUpdate }: PostProps) {
           className="flex items-center space-x-3 hover:text-primary-500"
         >
           <img
-            src={post.profile?.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop"}
+            src={post.profile?.avatar_url || "./logo.png"}
             alt={post.profile?.username}
             className="w-10 h-10 rounded-full border-2 border-primary-500"
           />

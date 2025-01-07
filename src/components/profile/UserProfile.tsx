@@ -60,7 +60,7 @@ export function UserProfile() {
       <div className="bg-dark-100 rounded-lg p-6 border border-primary-800/20 mb-6">
         <div className="flex items-center space-x-4">
           <img
-            src={profile.avatar_url || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop"}
+            src={profile.avatar_url || "./logo.png"}
             alt={profile.username}
             className="w-24 h-24 rounded-full border-2 border-primary-500"
           />
