@@ -39,6 +39,10 @@ export function Post({ post, onUpdate }: PostProps) {
     }
   };
 
+  // Extract count values
+  const likesCount = typeof post.likes_count === 'object' ? (post.likes_count as any)?.count ?? 0 : post.likes_count ?? 0;
+  const commentsCount = typeof post.comments_count === 'object' ? (post.comments_count as any)?.count ?? 0 : post.comments_count ?? 0;
+
   return (
     <div className="bg-dark-100 rounded-lg p-4 border border-primary-800/20">
       <div className="flex items-center justify-between mb-4">
@@ -82,11 +86,11 @@ export function Post({ post, onUpdate }: PostProps) {
           }`}
         >
           <Heart size={20} fill={post.user_has_liked ? 'currentColor' : 'none'} />
-          <span>{post.likes_count || 0}</span>
+          <span>{likesCount}</span>
         </button>
         <button className="flex items-center space-x-2 hover:text-primary-500">
           <MessageCircle size={20} />
-          <span>{post.comments_count || 0}</span>
+          <span>{commentsCount}</span>
         </button>
         <button className="flex items-center space-x-2 hover:text-primary-500">
           <Share2 size={20} />

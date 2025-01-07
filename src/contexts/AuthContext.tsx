@@ -12,18 +12,25 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check active sessions and subscribe to auth changes
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setUser(session?.user ?? null);
     });
 
@@ -31,29 +38,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, username: string) => {
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const { data: existingUser } = await supabase
+      .from('profiles')
+      .select('username')
+      .eq('username', username)
+      .maybeSingle();
+
+    if (existingUser) {
+      throw new Error('Username already taken');
+    }
+
+    const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     });
 
-    if (authError) throw authError;
+    if (signUpError) throw signUpError;
+    if (!authData.user) throw new Error('Signup failed');
 
-    if (authData.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([{ id: authData.user.id, username }]);
+    // Create profile directly
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .insert([
+        {
+          id: authData.user.id,
+          username,
+        }
+      ]);
 
-      if (profileError) throw profileError;
+    if (profileError) {
+      await supabase.auth.signOut();
+      throw new Error('Failed to create profile');
     }
   };
 
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
-      password,
+      password
     });
 
-    if (error) throw error;
+    if (error) {
+      if (error.message === 'Invalid login credentials') {
+        throw new Error('Invalid email or password');
+      }
+      throw error;
+    }
   };
 
   const signOut = async () => {
@@ -66,12 +96,4 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 }
