@@ -65,7 +65,7 @@ export function CreatePost() {
         {
           user_id: user.id,
           type: 'new_post',
-         // post_id: error?.details?.id, // Get the new post ID
+         post_id: error?.details?.id, // Get the new post ID
           message: `${user.email} created a new post`,
         }
       ]);
@@ -104,7 +104,7 @@ export function CreatePost() {
                 onClick={() => setImageFile(null)}
                 className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
               >
-                ×
+                x
               </button>
             </div>
           )}
