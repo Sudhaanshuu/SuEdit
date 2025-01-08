@@ -1,5 +1,5 @@
 import { User, Camera } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 
@@ -9,6 +9,7 @@ export function ProfilePage() {
   const [bio, setBio] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (user) {
@@ -20,7 +21,7 @@ export function ProfilePage() {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('username, bio')
+        .select('username, bio, avatar_url')
         .eq('id', user?.id)
         .single();
 
@@ -34,19 +35,60 @@ export function ProfilePage() {
     }
   };
 
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    try {
+      setLoading(true);
+      const fileExt = file.name.split('.').pop();
+      const filePath = `avatars/${user.id}.${fileExt}`;
+
+      // Upload image
+      const { error: uploadError } = await supabase.storage
+        .from('public')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('public')
+        .getPublicUrl(filePath);
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setMessage({ text: 'Profile picture updated successfully', type: 'success' });
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      setMessage({ text: 'Error updating profile picture', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!user || !username.trim()) return;
     setLoading(true);
     setMessage(null);
 
     try {
-      // Check if username is taken by another user
       const { data: existingUser, error: checkError } = await supabase
         .from('profiles')
         .select('id')
         .eq('username', username)
         .neq('id', user.id)
-        .single();
+        .maybeSingle();
 
       if (checkError && checkError.code !== 'PGRST116') {
         throw checkError;
@@ -83,12 +125,22 @@ export function ProfilePage() {
       <div className="bg-dark-100 rounded-lg p-6 border border-primary-800/20">
         <div className="flex flex-col items-center">
           <div className="relative">
-            <div className="w-24 h-24 rounded-full bg-dark-200 border-2 border-primary-500 flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full bg-dark-200 border-2 border-primary-500 flex items-center justify-center overflow-hidden">
               <User size={48} className="text-gray-400" />
             </div>
-            <button className="absolute bottom-0 right-0 bg-primary-600 p-2 rounded-full hover:bg-primary-700">
+            <button 
+              onClick={handleAvatarClick}
+              className="absolute bottom-0 right-0 bg-primary-600 p-2 rounded-full hover:bg-primary-700"
+            >
               <Camera size={16} className="text-white" />
             </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarChange}
+              className="hidden"
+            />
           </div>
           
           <div className="mt-6 w-full max-w-md space-y-4">

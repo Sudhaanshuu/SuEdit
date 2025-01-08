@@ -3,6 +3,7 @@ import { useAuth } from './contexts/AuthContext';
 import { Navbar } from './components/Navbar';
 import { CreatePost } from './components/CreatePost';
 import { Feed } from './components/feed/Feed';
+import { Footer } from './components/Footer';
 import { ProfilePage } from './components/profile/ProfilePage';
 import { UserProfile } from './components/profile/UserProfile';
 import { NotificationsPage } from './components/notifications/NotificationsPage';
@@ -49,6 +50,7 @@ function App() {
             element={user ? <NotificationsPage /> : <Navigate to="/" />} 
           />
         </Routes>
+        <Footer />
       </div>
     </Router>
   );

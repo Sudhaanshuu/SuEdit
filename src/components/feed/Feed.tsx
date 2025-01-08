@@ -46,7 +46,7 @@ export function Feed() {
         .select('id')
         .eq('post_id', data.id)
         .eq('user_id', user?.id)
-        .single();
+        .maybeSingle();
 
       const processedPost = {
         ...data,
@@ -78,7 +78,7 @@ export function Feed() {
           .select('id')
           .eq('post_id', post.id)
           .eq('user_id', user?.id)
-          .single();
+          .maybeSingle();
 
         return {
           ...post,
