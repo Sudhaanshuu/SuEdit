@@ -43,7 +43,6 @@ Create a new project and get your Supabase URL and anon key.
 In your project, create a .env file in the root directory.
 Add the following environment variables:
 ```bash
-Copy code
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
@@ -51,6 +50,5 @@ VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 Once everything is set up, you can start the development server:
 
 ```bash
-Copy code
 npm run dev
 ```
