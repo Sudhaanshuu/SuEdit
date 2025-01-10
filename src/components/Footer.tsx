@@ -6,7 +6,7 @@ export function Footer() {
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="text-center md:text-left mb-4 md:mb-0">
-            <h3 className="text-lg font-cyber text-white mb-2">Developed by Sudhanshu and Kapish</h3>
+            <h3 className="text-lg font-cyber text-white mb-2">Developed by Sudhanshu </h3>
             <p className="text-gray-400 text-sm">
               A sci-fi social media platform for the future
             </p>
