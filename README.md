@@ -9,7 +9,7 @@ Welcome to **Suedit**! This is a basic Reddit-like clone built using modern tech
 - **Authentication**: Using **Supabase** for secure sign-up and login.
 
 ## Live Demo
-Check out the live version of the app at:  
+Check out the live version of the app at  
 [**suedit.vercel.app**](https://suedit.vercel.app)
 
 ## Tech Stack
