@@ -61,14 +61,12 @@ export function CreatePost() {
       setImageFile(null);
       
       // Create notification for followers
-      await supabase.from('notifications').insert([
-        {
-          user_id: user.id,
-          type: 'new_post',
-         post_id: error?.details?.id, // Get the new post ID
-          message: `${user.email} created a new post`,
-        }
-      ]);
+      await supabase.from('notifications').insert([{
+        user_id: user.id,
+        type: 'new_post',
+        post_id: (error as any)?.details?.id, 
+        message: `${user.email} created a new post`,
+      }])
     } catch (error) {
       console.error('Error creating post:', error);
     } finally {
