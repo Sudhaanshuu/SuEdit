@@ -1,9 +1,7 @@
-import { Heart, MessageCircle, Share2, MoreVertical, X } from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { formatDistanceToNow } from 'date-fns';
-import { Post as PostType } from '../../lib/types';
+import { MoreHorizontal, Heart, MessageCircle, Trash2 } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
+import { Post as PostType } from '../../lib/types';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface PostProps {
@@ -13,15 +11,48 @@ interface PostProps {
 
 export function Post({ post, onUpdate }: PostProps) {
   const { user } = useAuth();
-  const [isLiking, setIsLiking] = useState(false);
-  const [showComments, setShowComments] = useState(false);
-  const [comment, setComment] = useState('');
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [commentContent, setCommentContent] = useState('');
   const [comments, setComments] = useState<any[]>([]);
-  const [loadingComments, setLoadingComments] = useState(false);
+  const [showComments, setShowComments] = useState(false);
+  const optionsRef = useRef<HTMLDivElement>(null);
+  const commentInputRef = useRef<HTMLInputElement>(null);
+
+  // Close options menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (optionsRef.current && !optionsRef.current.contains(event.target as Node)) {
+        setIsOptionsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  const fetchComments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('comments')
+        .select(`
+          *,
+          profile:profiles(id, username, avatar_url)
+        `)
+        .eq('post_id', post.id)
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setComments(data || []);
+    } catch (error) {
+      console.error('Error fetching comments:', error);
+    }
+  };
 
   const handleLike = async () => {
     if (!user) return;
-    setIsLiking(true);
 
     try {
       if (post.user_has_liked) {
@@ -33,204 +64,188 @@ export function Post({ post, onUpdate }: PostProps) {
       } else {
         await supabase
           .from('likes')
-          .insert([{ post_id: post.id, user_id: user.id }]);
-
-        // Create notification for post owner
-        if (post.user_id !== user.id) {
-          await supabase.from('notifications').insert([
-            {
-              user_id: post.user_id,
-              type: 'like',
-              post_id: post.id,
-              actor_id: user.id,
-              message: `${user.email} liked your post`,
-            }
-          ]);
-        }
+          .insert({
+            post_id: post.id,
+            user_id: user.id
+          });
       }
       onUpdate();
     } catch (error) {
       console.error('Error toggling like:', error);
-    } finally {
-      setIsLiking(false);
     }
   };
 
-  const toggleComments = async () => {
-    setShowComments(!showComments);
-    if (!showComments) {
-      await fetchComments();
-    }
-  };
+  const handleDeletePost = async () => {
+    if (!user || user.id !== post.user_id) return;
 
-  const fetchComments = async () => {
-    setLoadingComments(true);
+    setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('comments')
-        .select(`
-          *,
-          profile:profiles(id, username, avatar_url)
-        `)
-        .eq('post_id', post.id)
-        .order('created_at', { ascending: false });
+      // Delete associated likes and comments first
+      await supabase.from('likes').delete().eq('post_id', post.id);
+      await supabase.from('comments').delete().eq('post_id', post.id);
+      
+      // Delete the post
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', post.id)
+        .eq('user_id', user.id);
 
       if (error) throw error;
-      setComments(data || []);
+      
+      onUpdate();
     } catch (error) {
-      console.error('Error fetching comments:', error);
+      console.error('Error deleting post:', error);
     } finally {
-      setLoadingComments(false);
+      setLoading(false);
+      setIsOptionsOpen(false);
     }
   };
 
-  const handleComment = async () => {
-    if (!user || !comment.trim()) return;
+  const handleAddComment = async () => {
+    if (!user || !commentContent.trim()) return;
 
     try {
       const { error } = await supabase
         .from('comments')
-        .insert([
-          {
-            post_id: post.id,
-            user_id: user.id,
-            content: comment.trim(),
-          }
-        ]);
+        .insert({
+          post_id: post.id,
+          user_id: user.id,
+          content: commentContent.trim()
+        });
 
       if (error) throw error;
 
-      // Create notification for post owner
-      if (post.user_id !== user.id) {
-        await supabase.from('notifications').insert([
-          {
-            user_id: post.user_id,
-            type: 'comment',
-            post_id: post.id,
-            actor_id: user.id,
-            message: `${user.email} commented on your post`,
-          }
-        ]);
-      }
-
-      setComment('');
-      await fetchComments();
+      setCommentContent('');
       onUpdate();
+      
+      // Refresh comments if already showing
+      if (showComments) {
+        fetchComments();
+      }
     } catch (error) {
       console.error('Error adding comment:', error);
     }
   };
 
-  // Extract count values
-  const likesCount = typeof post.likes_count === 'object' ? (post.likes_count as any)?.count ?? 0 : post.likes_count ?? 0;
-  const commentsCount = typeof post.comments_count === 'object' ? (post.comments_count as any)?.count ?? 0 : post.comments_count ?? 0;
+  const toggleComments = () => {
+    setShowComments(!showComments);
+    if (!showComments) {
+      fetchComments();
+    }
+  };
+
+  const totalLikes = Array.isArray(post.likes_count) && post.likes_count.length > 0 
+  ? post.likes_count[0].count 
+  : 0;
+const totalComments = Array.isArray(post.comments_count) && post.comments_count.length > 0
+  ? post.comments_count[0].count 
+  : 0;
 
   return (
-    <div className="bg-dark-100 rounded-lg p-4 border border-primary-800/20">
-      <div className="flex items-center justify-between mb-4">
-        <Link 
-          to={`/profile/${post.profile?.username}`}
-          className="flex items-center space-x-3 hover:text-primary-500"
-        >
-          <img
-            src={post.profile?.avatar_url || "./logo.png"}
-            alt={post.profile?.username}
-            className="w-10 h-10 rounded-full border-2 border-primary-500"
-          />
-          <div>
-            <h3 className="font-cyber text-white">{post.profile?.username}</h3>
-            <p className="text-xs text-gray-400">
-              {formatDistanceToNow(new Date(post.created_at), { addSuffix: true })}
-            </p>
-          </div>
-        </Link>
-        <button className="text-gray-400 hover:text-primary-500">
-          <MoreVertical size={20} />
-        </button>
-      </div>
-      
-      <p className="text-gray-200 mb-4">{post.content}</p>
-      
-      {post.image_url && (
-        <img
-          src={post.image_url}
-          alt="Post content"
-          className="rounded-lg w-full mb-4 object-cover max-h-96"
-        />
+    <div className="bg-dark-100 rounded-lg p-4 border border-primary-800/20 relative">
+      {user && user.id === post.user_id && (
+  <div className="absolute top-4 right-4">
+    <div className="relative">
+      <button 
+        onClick={() => setIsOptionsOpen(!isOptionsOpen)}
+        className="text-gray-400 hover:text-gray-200"
+      >
+        <MoreHorizontal size={20} />
+      </button>
+      {isOptionsOpen && (
+        <div className="absolute right-0 top-full z-10 bg-dark-200 rounded-lg shadow-lg mt-2 w-40">
+          <button
+            onClick={handleDeletePost}
+            disabled={loading}
+            className="flex items-center w-full p-2 text-red-500 hover:bg-dark-100 disabled:opacity-50"
+          >
+            <Trash2 size={16} className="mr-2" />
+            Delete Post
+          </button>
+        </div>
       )}
+    </div>
+  </div>
+)}
       
-      <div className="flex items-center space-x-4 text-gray-400">
-        <button
-          onClick={handleLike}
-          disabled={isLiking || !user}
-          className={`flex items-center space-x-2 ${
-            post.user_has_liked ? 'text-primary-500' : 'hover:text-primary-500'
-          }`}
-        >
-          <Heart size={20} fill={post.user_has_liked ? 'currentColor' : 'none'} />
-          <span>{likesCount}</span>
-        </button>
-        <button 
-          onClick={toggleComments}
-          className={`flex items-center space-x-2 hover:text-primary-500 ${
-            showComments ? 'text-primary-500' : ''
-          }`}
-        >
-          <MessageCircle size={20} />
-          <span>{commentsCount}</span>
-        </button>
-        <button className="flex items-center space-x-2 hover:text-primary-500">
-          <Share2 size={20} />
-        </button>
-      </div>
-
-      {showComments && (
-        <div className="mt-4 space-y-4">
-          {user && (
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                value={comment}
-                onChange={(e) => setComment(e.target.value)}
-                placeholder="Write a comment..."
-                className="flex-1 bg-dark-200 text-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-              />
-              <button
-                onClick={handleComment}
-                disabled={!comment.trim()}
-                className="bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+      <div className="flex items-start space-x-4">
+        <img
+          src={post.profile?.avatar_url || './logo.png'}
+          alt={`${post.profile?.username || 'User'}'s avatar`}
+          className="w-10 h-10 rounded-full border-2 border-primary-500"
+        />
+        <div className="flex-1">
+          <p className="font-medium text-gray-200">{post.profile?.username || 'Unknown User'}</p>
+          <p className="text-gray-400 mt-2">{post.content}</p>
+          {post.image_url && (
+            <img 
+              src={post.image_url} 
+              alt="Post" 
+              className="mt-4 rounded-lg max-h-64 w-full object-cover" 
+            />
+          )}
+          
+          <div className="flex justify-between items-center mt-4">
+            <div className="flex items-center space-x-4">
+              <button 
+                onClick={handleLike}
+                className={`flex items-center space-x-2 ${
+                  post.user_has_liked ? 'text-red-500' : 'text-gray-400'
+                }`}
               >
-                Comment
+                <Heart size={20} fill={post.user_has_liked ? 'currentColor' : 'none'} />
+                <span>{totalLikes}</span>
+              </button>
+              <button 
+                onClick={toggleComments}
+                className="flex items-center space-x-2 text-gray-400 hover:text-primary-500"
+              >
+                <MessageCircle size={20} />
+                <span>{totalComments}</span>
               </button>
             </div>
-          )}
+          </div>
 
-          {loadingComments ? (
-            <div className="text-center text-gray-400">Loading comments...</div>
-          ) : (
-            <div className="space-y-3">
+          {showComments && (
+            <div className="mt-4 space-y-4">
               {comments.map((comment) => (
-                <div key={comment.id} className="bg-dark-200 rounded-lg p-3">
-                  <div className="flex items-center space-x-2 mb-2">
-                    <img
-                      src={comment.profile.avatar_url || "./logo.png"}
-                      alt={comment.profile.username}
-                      className="w-6 h-6 rounded-full border border-primary-500"
-                    />
-                    <span className="font-cyber text-sm text-white">
-                      {comment.profile.username}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {formatDistanceToNow(new Date(comment.created_at), { addSuffix: true })}
-                    </span>
+                <div key={comment.id} className="flex items-start space-x-3">
+                  <img
+                    src={comment.profile?.avatar_url || './logo.png'}
+                    alt={`${comment.profile?.username || 'User'}'s avatar`}
+                    className="w-8 h-8 rounded-full"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-gray-200">
+                      {comment.profile?.username || 'Unknown User'}
+                    </p>
+                    <p className="text-gray-400 text-sm">{comment.content}</p>
                   </div>
-                  <p className="text-gray-200 text-sm">{comment.content}</p>
                 </div>
               ))}
+
+              <div className="flex items-center space-x-3 mt-4">
+                <input
+                  ref={commentInputRef}
+                  type="text"
+                  value={commentContent}
+                  onChange={(e) => setCommentContent(e.target.value)}
+                  placeholder="Add a comment..."
+                  className="flex-1 bg-dark-200 text-gray-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <button
+                  onClick={handleAddComment}
+                  disabled={!commentContent.trim()}
+                  className="bg-primary-600 text-white px-3 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+                >
+                  Post
+                </button>
+              </div>
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
