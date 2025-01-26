@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Post as PostType } from '../../lib/types';
 import { useAuth } from '../../contexts/AuthContext';
+import { Link } from 'react-router-dom'; // Import Link for navigation
 
 interface PostProps {
   post: PostType;
@@ -136,116 +137,123 @@ export function Post({ post, onUpdate }: PostProps) {
   };
 
   const totalLikes = Array.isArray(post.likes_count) && post.likes_count.length > 0 
-  ? post.likes_count[0].count 
-  : 0;
-const totalComments = Array.isArray(post.comments_count) && post.comments_count.length > 0
-  ? post.comments_count[0].count 
-  : 0;
+    ? post.likes_count[0].count 
+    : 0;
+  const totalComments = Array.isArray(post.comments_count) && post.comments_count.length > 0
+    ? post.comments_count[0].count 
+    : 0;
 
   return (
     <div className="bg-dark-100 rounded-lg p-4 border border-primary-800/20 relative">
       {user && user.id === post.user_id && (
-  <div className="absolute top-4 right-4">
-    <div className="relative">
-      <button 
-        onClick={() => setIsOptionsOpen(!isOptionsOpen)}
-        className="text-gray-400 hover:text-gray-200"
-      >
-        <MoreHorizontal size={20} />
-      </button>
-      {isOptionsOpen && (
-        <div className="absolute right-0 top-full z-10 bg-dark-200 rounded-lg shadow-lg mt-2 w-40">
-          <button
-            onClick={handleDeletePost}
-            disabled={loading}
-            className="flex items-center w-full p-2 text-red-500 hover:bg-dark-100 disabled:opacity-50"
-          >
-            <Trash2 size={16} className="mr-2" />
-            Delete Post
-          </button>
-        </div>
-      )}
-    </div>
-  </div>
-)}
-      
-      <div className="flex items-start space-x-4">
-        <img
-          src={post.profile?.avatar_url || './logo.png'}
-          alt={`${post.profile?.username || 'User'}'s avatar`}
-          className="w-10 h-10 rounded-full border-2 border-primary-500"
-        />
-        <div className="flex-1">
-          <p className="font-medium text-gray-200">{post.profile?.username || 'Unknown User'}</p>
-          <p className="text-gray-400 mt-2">{post.content}</p>
-          {post.image_url && (
-            <img 
-              src={post.image_url} 
-              alt="Post" 
-              className="mt-4 rounded-lg max-h-64 w-full object-cover" 
-            />
-          )}
-          
-          <div className="flex justify-between items-center mt-4">
-            <div className="flex items-center space-x-4">
-              <button 
-                onClick={handleLike}
-                className={`flex items-center space-x-2 ${
-                  post.user_has_liked ? 'text-red-500' : 'text-gray-400'
-                }`}
-              >
-                <Heart size={20} fill={post.user_has_liked ? 'currentColor' : 'none'} />
-                <span>{totalLikes}</span>
-              </button>
-              <button 
-                onClick={toggleComments}
-                className="flex items-center space-x-2 text-gray-400 hover:text-primary-500"
-              >
-                <MessageCircle size={20} />
-                <span>{totalComments}</span>
-              </button>
-            </div>
-          </div>
-
-          {showComments && (
-            <div className="mt-4 space-y-4">
-              {comments.map((comment) => (
-                <div key={comment.id} className="flex items-start space-x-3">
-                  <img
-                    src={comment.profile?.avatar_url || './logo.png'}
-                    alt={`${comment.profile?.username || 'User'}'s avatar`}
-                    className="w-8 h-8 rounded-full"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-gray-200">
-                      {comment.profile?.username || 'Unknown User'}
-                    </p>
-                    <p className="text-gray-400 text-sm">{comment.content}</p>
-                  </div>
-                </div>
-              ))}
-
-              <div className="flex items-center space-x-3 mt-4">
-                <input
-                  ref={commentInputRef}
-                  type="text"
-                  value={commentContent}
-                  onChange={(e) => setCommentContent(e.target.value)}
-                  placeholder="Add a comment..."
-                  className="flex-1 bg-dark-200 text-gray-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
-                />
+        <div className="absolute top-4 right-4">
+          <div className="relative">
+            <button 
+              onClick={() => setIsOptionsOpen(!isOptionsOpen)}
+              className="text-gray-400 hover:text-gray-200"
+            >
+              <MoreHorizontal size={20} />
+            </button>
+            {isOptionsOpen && (
+              <div className="absolute right-0 top-full z-10 bg-dark-200 rounded-lg shadow-lg mt-2 w-40">
                 <button
-                  onClick={handleAddComment}
-                  disabled={!commentContent.trim()}
-                  className="bg-primary-600 text-white px-3 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+                  onClick={handleDeletePost}
+                  disabled={loading}
+                  className="flex items-center w-full p-2 text-red-500 hover:bg-dark-100 disabled:opacity-50"
                 >
-                  Post
+                  <Trash2 size={16} className="mr-2" />
+                  Delete Post
                 </button>
               </div>
-            </div>
-          )}
+            )}
+          </div>
+        </div>
+      )}
+      
+      <div className="flex items-start space-x-4">
+        {/* Wrap the avatar and username in a Link to the user's profile */}
+        <Link 
+          to={`/profile/${post.profile?.username}`} 
+          className="flex items-center space-x-4 hover:text-primary-500"
+        >
+          <img
+            src={post.profile?.avatar_url || './logo.png'}
+            alt={`${post.profile?.username || 'User'}'s avatar`}
+            className="w-10 h-10 rounded-full border-2 border-primary-500"
+          />
+          <p className="font-medium text-gray-200">{post.profile?.username || 'Unknown User'}</p>
+        </Link>
+      </div>
+
+      <div className="mt-4">
+        <p className="text-gray-400">{post.content}</p>
+        {post.image_url && (
+          <img 
+            src={post.image_url} 
+            alt="Post" 
+            className="mt-4 rounded-lg max-h-64 w-full object-cover" 
+          />
+        )}
+      </div>
+
+      <div className="flex justify-between items-center mt-4">
+        <div className="flex items-center space-x-4">
+          <button 
+            onClick={handleLike}
+            className={`flex items-center space-x-2 ${
+              post.user_has_liked ? 'text-red-500' : 'text-gray-400'
+            }`}
+          >
+            <Heart size={20} fill={post.user_has_liked ? 'currentColor' : 'none'} />
+            <span>{totalLikes}</span>
+          </button>
+          <button 
+            onClick={toggleComments}
+            className="flex items-center space-x-2 text-gray-400 hover:text-primary-500"
+          >
+            <MessageCircle size={20} />
+            <span>{totalComments}</span>
+          </button>
         </div>
       </div>
+
+      {showComments && (
+        <div className="mt-4 space-y-4">
+          {comments.map((comment) => (
+            <div key={comment.id} className="flex items-start space-x-3">
+              <img
+                src={comment.profile?.avatar_url || './logo.png'}
+                alt={`${comment.profile?.username || 'User'}'s avatar`}
+                className="w-8 h-8 rounded-full"
+              />
+              <div>
+                <p className="text-sm font-medium text-gray-200">
+                  {comment.profile?.username || 'Unknown User'}
+                </p>
+                <p className="text-gray-400 text-sm">{comment.content}</p>
+              </div>
+            </div>
+          ))}
+
+          <div className="flex items-center space-x-3 mt-4">
+            <input
+              ref={commentInputRef}
+              type="text"
+              value={commentContent}
+              onChange={(e) => setCommentContent(e.target.value)}
+              placeholder="Add a comment..."
+              className="flex-1 bg-dark-200 text-gray-200 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+            <button
+              onClick={handleAddComment}
+              disabled={!commentContent.trim()}
+              className="bg-primary-600 text-white px-3 py-2 rounded-lg hover:bg-primary-700 disabled:opacity-50"
+            >
+              Post
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
