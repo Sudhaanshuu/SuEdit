@@ -1,5 +1,5 @@
 /*
-  # Fix profile schema and add updated_at functionality
+ 
   
   1. Updates
     - Add updated_at column if not exists
