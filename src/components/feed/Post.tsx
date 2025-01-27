@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import { supabase } from '../../lib/supabase';
 import { Post as PostType } from '../../lib/types';
 import { useAuth } from '../../contexts/AuthContext';
-import { Link } from 'react-router-dom'; // Import Link for navigation
+import { Link } from 'react-router-dom'; 
 
 interface PostProps {
   post: PostType;
