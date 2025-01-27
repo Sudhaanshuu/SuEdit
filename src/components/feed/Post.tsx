@@ -78,20 +78,21 @@ export function Post({ post, onUpdate }: PostProps) {
 
   const handleDeletePost = async () => {
     if (!user || user.id !== post.user_id) return;
-
+  
+    const isConfirmed = window.confirm("Are you sure you want to delete this post?");
+    if (!isConfirmed) return;
+  
     setLoading(true);
     try {
-      // Delete associated likes and comments first
       await supabase.from('likes').delete().eq('post_id', post.id);
       await supabase.from('comments').delete().eq('post_id', post.id);
       
-      // Delete the post
       const { error } = await supabase
         .from('posts')
         .delete()
         .eq('id', post.id)
         .eq('user_id', user.id);
-
+  
       if (error) throw error;
       
       onUpdate();
