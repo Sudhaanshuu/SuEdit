@@ -2,13 +2,15 @@ import { Search, Bell, Menu, User, LogOut, Home, X } from 'lucide-react';
 import { useState } from 'react';
 import { AuthModal } from './auth/AuthModal';
 import { useAuth } from '../contexts/AuthContext';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 
 export function Navbar() {
   const { user, signOut } = useAuth();
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(''); 
   const location = useLocation();
+  const navigate = useNavigate(); 
 
   const handleSignOut = async () => {
     try {
@@ -16,6 +18,16 @@ export function Navbar() {
       setIsMobileMenuOpen(false);
     } catch (error) {
       console.error('Error signing out:', error);
+    }
+  };
+
+  // Handle search form submission
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/profile/${searchQuery}`); 
+     // setSearchQuery(''); // Clear the search input
+      setIsMobileMenuOpen(false); 
     }
   };
 
@@ -41,15 +53,20 @@ export function Navbar() {
               )}
             </div>
 
+            {/* Search bar for desktop */}
             <div className="hidden md:block flex-1 max-w-xl mx-8">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search Suedit..."
-                  className="w-full bg-dark-100 text-gray-200 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-gray-500"
-                />
-                <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
-              </div>
+              <form onSubmit={handleSearch}>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search Suedit..."
+                    className="w-full bg-dark-100 text-gray-200 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-gray-500"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+                </div>
+              </form>
             </div>
 
             <div className="flex items-center space-x-4">
@@ -101,14 +118,18 @@ export function Navbar() {
         {isMobileMenuOpen && (
           <div className="md:hidden bg-dark-200 border-t border-primary-800/20">
             <div className="px-4 py-3 space-y-3">
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search Suedit..."
-                  className="w-full bg-dark-100 text-gray-200 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-gray-500"
-                />
-                <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
-              </div>
+              <form onSubmit={handleSearch}>
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search Suedit..."
+                    className="w-full bg-dark-100 text-gray-200 rounded-lg pl-10 pr-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500 placeholder-gray-500"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
+                  <Search className="absolute left-3 top-2.5 text-gray-400" size={20} />
+                </div>
+              </form>
               {user ? (
                 <button 
                   onClick={handleSignOut}
