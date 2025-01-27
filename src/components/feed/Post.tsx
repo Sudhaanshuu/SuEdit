@@ -236,46 +236,52 @@ export function Post({ post, onUpdate }: PostProps) {
       {showComments && (
         <div className="mt-4 space-y-4">
           {comments.map((comment) => (
-            <div key={comment.id} className="flex items-start space-x-3">
-              <img
-                src={comment.profile?.avatar_url || "./logo.png"}
-                alt={`${comment.profile?.username || "User"}'s avatar`}
-                className="w-8 h-8 rounded-full"
-              />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-200">
-                  {comment.profile?.username || "Unknown User"}
-                </p>
-                <p className="text-gray-400 text-sm">{comment.content}</p>
-              </div>
-              {user && user.id === comment.user_id && (
-                <button
-                  onClick={async () => {
-                    const isConfirmed = window.confirm(
-                      "Are you sure you want to delete this comment?"
-                    );
-                    if (!isConfirmed) return;
+  <div key={comment.id} className="flex items-start space-x-3">
+    {/* Link to the commenter's profile */}
+    <Link
+      to={`/profile/${comment.profile?.username}`}
+      className="flex items-center space-x-3 hover:text-primary-500"
+    >
+      <img
+        src={comment.profile?.avatar_url || "./logo.png"}
+        alt={`${comment.profile?.username || "User"}'s avatar`}
+        className="w-8 h-8 rounded-full"
+      />
+      <div className="flex-1">
+        <p className="text-sm font-medium text-gray-200">
+          {comment.profile?.username || "Unknown User"}
+        </p>
+        <p className="text-gray-400 text-sm">{comment.content}</p>
+      </div>
+    </Link>
+    {user && user.id === comment.user_id && (
+      <button
+        onClick={async () => {
+          const isConfirmed = window.confirm(
+            "Are you sure you want to delete this comment?"
+          );
+          if (!isConfirmed) return;
 
-                    try {
-                      const { error } = await supabase
-                        .from("comments")
-                        .delete()
-                        .eq("id", comment.id);
+          try {
+            const { error } = await supabase
+              .from("comments")
+              .delete()
+              .eq("id", comment.id);
 
-                      if (error) throw error;
-                      onUpdate();
-                      fetchComments(); // Refresh comments
-                    } catch (error) {
-                      console.error("Error deleting comment:", error);
-                    }
-                  }}
-                  className="text-red-500 hover:text-red-600"
-                >
-                  <Trash2 size={16} />
-                </button>
-              )}
-            </div>
-          ))}
+            if (error) throw error;
+            onUpdate();
+            fetchComments(); // Refresh comments
+          } catch (error) {
+            console.error("Error deleting comment:", error);
+          }
+        }}
+        className="text-red-500 hover:text-red-600"
+      >
+        <Trash2 size={16} />
+      </button>
+    )}
+  </div>
+))}
 
           <div className="flex items-center space-x-3 mt-4">
             <input
