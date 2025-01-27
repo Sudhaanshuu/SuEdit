@@ -73,6 +73,11 @@ export function Feed() {
     }
   };
 
+  const searchUser = async ()=>{
+let find=document.getElementById("searchbar");
+
+  };
+
   const fetchPosts = async () => {
     try {
       const { data, error } = await supabase
