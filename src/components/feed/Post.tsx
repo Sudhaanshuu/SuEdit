@@ -171,19 +171,26 @@ export function Post({ post, onUpdate }: PostProps) {
       )}
       
       <div className="flex items-start space-x-4">
-        {/* Wrap the avatar and username in a Link to the user's profile */}
-        <Link 
-          to={`/profile/${post.profile?.username}`} 
-          className="flex items-center space-x-4 hover:text-primary-500"
-        >
-          <img
-            src={post.profile?.avatar_url || './logo.png'}
-            alt={`${post.profile?.username || 'User'}'s avatar`}
-            className="w-10 h-10 rounded-full border-2 border-primary-500"
-          />
-          <p className="font-medium text-gray-200">{post.profile?.username || 'Unknown User'}</p>
-        </Link>
-      </div>
+  {/* Wrap the avatar and username in a Link to the user's profile */}
+  <Link 
+    to={`/profile/${post.profile?.username}`} 
+    className="flex items-center space-x-4 hover:text-primary-500"
+  >
+    <img
+      src={post.profile?.avatar_url || './logo.png'}
+      alt={`${post.profile?.username || 'User'}'s avatar`}
+      className="w-10 h-10 rounded-full border-2 border-primary-500"
+    />
+    <div>
+      <p className="font-medium text-gray-200">{post.profile?.username || 'Unknown User'}</p>
+      <p className="text-xs text-gray-500">
+        {new Date(post.created_at).toLocaleString()} {/* Add this line */}
+      </p>
+    </div>
+  </Link>
+</div>
+
+      
 
       <div className="mt-4">
         <p className="text-gray-400">{post.content}</p>
